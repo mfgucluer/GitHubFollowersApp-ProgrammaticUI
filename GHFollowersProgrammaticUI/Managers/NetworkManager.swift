@@ -56,14 +56,14 @@ class NetworkManager {
     private init(){
         //NetworkManager sınıfının private bir initializer'ı bulunuyor. Bu, bu sınıftan başka bir örneğin oluşturulmasını engeller ve singleton tasarım desenini uygular. Bunu private olarak yapmazsan defaultta internal olarak gelir ve baska yerlerde networkManager sinifindan nesne olusturularak ayri ve farkli yerlerde baska nesnelerle erisim saglanabilir. Bu singleton yapisina aykiri bir durum.. Yani private kullanmazsan daha genis bir erisim izni vermis oluyorsun bu durumda Singleton tasarim desenini korumani zorlastirir.Singleton tasarım deseni, bir sınıfın yalnızca bir örneğine sahip olması ve bu örneğin genel bir erişim noktası olması prensibine dayanır.
     }
-    
+      
     
     
     //Buradaki kod bir tane singleton yaratir.
     
     //simdi fonksiyonumuzu yazacagiz.
     //escape den sonra network call islemi tamamlandiginda biliyorsun Follower array return edecegiz dogal olarak. O yuzden [Follower] yaziyoruz. Ve bunlari optional yapiyoruz cunku gelmeyebiliriler.
-    func getFollowers(for username: String, page: Int, completed: @escaping ([Follower]?, ErrorMessagee?) -> Void) {
+    func getFollowers(for username: String, page: Int, completed: @escaping (Result<[Follower],GFError>) -> Void) {
         //Buradaki escapingin anlami completed parametresinin bir fonksiyon gibi disarida cagirabilmek... fonksiyonun icinde for kullanilmasini sebebide galiba username ve page'i es gecebilmek benim anladigim.
         
         
@@ -72,7 +72,7 @@ class NetworkManager {
         
         //Swiftte URL type oldugu icin yukaridaki olayi URL objecte cevirmemiz gerekiyor.
         guard let url = URL(string: endpoint) else{
-            completed(nil, ErrorMessagee.invalidUsername)
+            completed(.failure(.invalidUsername))
             return
             //endpoint string'i kullanılarak bir URL oluşturuluyor. Eğer bu işlem başarısız olursa, completed closure'ı çağrılarak hata mesajı ile birlikte nil değeri döndürülüyor.
             /*
@@ -113,7 +113,7 @@ class NetworkManager {
 
             // if letten sonra _ kullanmamizin nedeni: hatanın kendisine ihtiyaç duymuyoruz, sadece hatanın olup olmadığını kontrol ediyoruz.
             if let _ = error{
-                completed(nil, ErrorMessagee.unabletoComplete)
+                completed(.failure(.unabletoComplete))
                 /*
                  Bu ifadenin amacı, eğer error değeri nil ise (yani herhangi bir hata oluşmamışsa), completed closure'ını çağırarak işlemi tamamlamaktır.
                  completed fonksiyonu, asenkron bir işlemin sonucunu bildiren bir closure'dır. İlk parametre olarak [Follower]? tipinde bir dizi (takipçi listesi) veya nil değeri alır, ikinci parametre olarak ise bir hata mesajı alır. Eğer hata oluşmuşsa, nil değeri verilir ve hata mesajı belirtilir.
@@ -128,7 +128,7 @@ class NetworkManager {
             
            // guard let response = response as? HTTPURLResponse: Bu satır, response değişkenini bir HTTPURLResponse türüne dönüştürmeye çalışır. Eğer bu dönüşüm başarılıysa, yani response bir HTTPURLResponse objesi ise, kontrol devam eder. Aksi takdirde (dönüşüm başarısızsa), else bloğuna girer ve işlem burada sona erer.Bu kontrolün amacı, sunucudan gelen yanıtın (response) bir HTTPURLResponse objesi olup olmadığını kontrol etmek ve durum kodunun 200 olup olmadığını kontrol etmektir.
             guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-                completed(nil, ErrorMessagee.invalidResponse)
+                completed(.failure(.invalidResponse))
                 return
             }
             
@@ -137,7 +137,7 @@ class NetworkManager {
             
             
             guard let data = data else{
-                completed(nil, ErrorMessagee.invalidData)
+                completed(.failure(.invalidData))
                 return
             }
             
@@ -209,12 +209,12 @@ class NetworkManager {
 
                      Yani, bu kod satırı, ağ isteğinin başarıyla tamamlandığını ve alınan veriyi (takipçilerin listesi) `completed` closure'ına ilettiğini belirtir. Eğer hata oluşmuş olsaydı, `completed` closure'ına hata durumunu belirten bir mesaj iletilirdi.
                      */
-                completed(followers,nil)
+                completed(.success(followers))
                 
             } catch {
                 // Eğer JSON dönüştürme işlemi başarısız olursa (hata oluşursa),
                     // completionHandler'a nil (başarısızlık durumunu belirten) ve bir hata mesajı gönderiliyor.
-                completed(nil, ErrorMessagee.invalidData)
+                completed(.failure(.invalidData))
             }
         }
         

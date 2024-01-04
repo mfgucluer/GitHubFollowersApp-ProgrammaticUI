@@ -5,6 +5,8 @@
 //  Created by Mustafa Fatih on 16/12/23.
 //
 
+
+
 import UIKit
 
 class FollowersListVC: UIViewController {
@@ -18,16 +20,19 @@ class FollowersListVC: UIViewController {
         navigationController?.isNavigationBarHidden = false
         view.backgroundColor = .systemBackground
         navigationController?.navigationBar.prefersLargeTitles = true // Buyuk olmasini istiyoruz.
-       
         
-        NetworkManager.sharedd.getFollowers(for: username, page: 1) { followers, errorMessage in
-            guard let followers = followers else {
-                self.presenatGFAlertOnMainThread(title: "Bad stuff Happend", message: errorMessage?.rawValue ?? "MFG", buttonTitle: "OK")
-                return
-            }
+        
+        
+        NetworkManager.sharedd.getFollowers(for: username, page: 1) { result in
             
-            print("Followers.count =  \(followers.count)")
-            print(followers)
+            switch result {
+            case.success(let followers):
+                print(followers)
+                
+            case.failure(let error):
+                self.presenatGFAlertOnMainThread(title: "Bad stuff Happend", message: error.rawValue ?? "MFG", buttonTitle: "OK")
+                
+            }
             
         }
     }
@@ -38,6 +43,4 @@ class FollowersListVC: UIViewController {
     }
     
   
-  
-
 }
