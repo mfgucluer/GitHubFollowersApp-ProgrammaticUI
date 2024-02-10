@@ -5,7 +5,7 @@
 //  Created by Mustafa Fatih on 19/12/23.
 //
 
-import Foundation
+import UIKit
 
 
 
@@ -49,7 +49,10 @@ class NetworkManager {
      */
     
     
-    let baseURL = "https://api.github.com/users/" //gitHub apisinin temel url dir bu.
+    private let baseURL = "https://api.github.com/users/" //gitHub apisinin temel url dir bu. Bunu private yaptik cunku network managera disaridan ulasmaya calistigimizda . yaptigimizda baseURL in cikmasini istemiyoruz. Sadece cache 'e ulasmak istiyoruz.
+
+//NS  = Next Step demek. Simdi burada network managerimizi icin bir cacheimiz var. Ve sadece bir tane cacheimiz var. Singleton yapisindan dolayi.
+    let cache = NSCache<NSString, UIImage>()
     
 
     
