@@ -17,8 +17,10 @@ class FollowersListVC: UIViewController {
     
     var username: String!
     var followers: [Follower] = []
+    var filteredFollowers: [Follower] = []
     var page = 1
     var hasMoreFollowers = true
+    var isSearching = false
     
     
     var collectionView: UICollectionView!
@@ -31,6 +33,7 @@ class FollowersListVC: UIViewController {
         super.viewDidLoad()
         configureCollectionView()
         configureViewController()
+        configureSearchController()
         getFollowers(username: username, page: page)
         configureDataSource()
         
@@ -74,16 +77,33 @@ class FollowersListVC: UIViewController {
         
     }
     
-    
+    func configureSearchController(){
+        let searchController = UISearchController()
+        searchController.searchResultsUpdater = self
+        searchController.searchBar.delegate = self
+        searchController.searchBar.placeholder = "Search for a username"
+        searchController.obscuresBackgroundDuringPresentation = false  //searche bastiginda alttaki collectionview'in kararmasini onluyor.
+        navigationItem.hidesSearchBarWhenScrolling = false // bunu yazmazsan scroll yapmadikca search bar gozukmuyor.
+        navigationItem.searchController = searchController
+        
+        
+    }
     
    
     
     func getFollowers(username: String, page: Int){
+        showLoadingView() //viewControllerin extensionu oldugu icin direkt bu sekilde yazabiliyoruz cunku tum viewcontrollerlar buna sahip...
+        
+        
+        
+        
         //Buraya sonradan usernmae ve page parametrelerini ekledik...
         
         
         //Gordugun gibi asagida network manager var. Network call'i burada yapiyoruz. network managerimiz asagida gordugun gibi self.followers = followers self.update() tarzinda strong reference lere sahip. Burada self dedigimiz tabi ki bizim bu classimiz yani follower list vc.. this could cause memory leak.. we would like to make this self a weak variable. Bunu bu sekilde [weak self] -> capture list deniyor buna galiba.. yazarak selfi weak yapabiliyoruz. bu durum selflerin optional olma ihtiyacina sebep oluyor cok dogal olarak. Cunku weak oldugu icin gelmeyebilir vibe 'i olusuyor. selflerin oraya ? koymamak icin
         NetworkManager.sharedd.getFollowers(for: username, page: page) { [weak self] result in
+            
+            
             
             //swift 4.2 de tanitilan su kod satirini buraya koyabilirsin ancak ben koymak istemiyorum. guard let self = self else {return} seklinde yazabilirsin.
             
@@ -94,9 +114,23 @@ class FollowersListVC: UIViewController {
                 
                 guard let self = self else {return}
                 
+                // #warning("Call dismis here") //bu bir warning bu seilde yazilabiliyor sanirim
+                self.dismissLoadingView()
+
                 if followers.count < 100 { self.hasMoreFollowers = false} //Burada direkt false yapiyoruz ki scrol yapmasin...
                 self.followers.append(contentsOf: followers) //Buradaki self.followers yukarida olusturdugumuz dizi...
-                self.updateData()
+               
+                
+                if self.followers.isEmpty {
+                    let message = "This user doesn't have any followers. Go follow them 😀."
+                    DispatchQueue.main.async{
+                        self.ShowEmptyStateView(message: message, view: self.view) //closureda oldugumuz icin self koyacagiz mecbur. Zaten extension oldugu icin geliyor direkt.
+                        return
+                    }
+                }
+                
+                
+                self.updateData(followers: self.followers)
                 
             case.failure(let error):
                 self?.presenatGFAlertOnMainThread(title: "Bad stuff Happend", message: error.rawValue , buttonTitle: "OK")
@@ -129,12 +163,12 @@ class FollowersListVC: UIViewController {
     }
     
     
-    func updateData(){
+    func updateData(followers: [Follower]){
         var snapshot = NSDiffableDataSourceSnapshot<Section, Follower>()
         snapshot.appendSections([.main])
         snapshot.appendItems(followers)
         
-        DispatchQueue.main.sync {
+        DispatchQueue.main.async {
             
             self.dataSource.apply(snapshot, animatingDifferences: true)
             
@@ -178,6 +212,67 @@ extension FollowersListVC: UICollectionViewDelegate {
         
      
     }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        /*
+        if( isSearching == false){
+            let follower = followers[indexPath.item] //This is the what is tapped
+        }
+        else{
+            let follower = filteredFollowers[indexPath.item]
+        }
+        Bunu bu sekilde yapmak yerine daha pratik bir yol var 2 satirda isi cozuyoruz... W ? T: F yontemi yani What ? True or False demek.
+         
+         Eğer isSearching değişkeni true ise, o zaman activeArray değişkeni filteredFollowers dizisinin değerini alır.
+         Eğer isSearching değişkeni false ise, o zaman activeArray değişkeni followers dizisinin değerini alır.
+         */
+        
+        let activeArray = isSearching ? filteredFollowers : followers
+        let followerUser = activeArray[indexPath.item]
+        
+        
+        
+        let destinationVC = UserInfoVC()
+        
+        destinationVC.username = followerUser.login
+        
+        let navigationController = UINavigationController(rootViewController: destinationVC)
+        present(navigationController, animated: true)
+        
+        
+        
+    }
    
     
+   
 }
+
+extension FollowersListVC: UISearchResultsUpdating,UISearchBarDelegate {
+    func updateSearchResults(for searchController: UISearchController) {
+        //Burada searchbardaki yazi degistikce search'in update olmasinin ayarlayacagiz. burada arrayimizi filterlayacagiz ve collectionViewimizi ona gore update edecegiz. Ilk olarak searchController'in searchbarinda text oldugundan emin olmaliyiz.
+        
+        //2. kisminda empty olup olmadigina da bakiyoruz. Iste empty olursa search result'i update etmemis olacagiz. Direkt return ile cikiyoruz.
+        guard let filter = searchController.searchBar.text, !filter.isEmpty else {return}
+        
+        //burada filter olmus yeni bir array'e ihtiyacimiz var. Cunku collection view'da her seferinde onu gosterecegiz. Bu sekilde update edilmis olacak.
+        //CollectionViewda da zaten array of followers var yani. Yani searchBar da yazdigimiz texte gore filter olacak mevcut array her seferinde.
+        //Bunun icin en ustte filteredArray follower olusturuyourz.
+        
+        isSearching  = true
+        filteredFollowers = followers.filter {
+            $0.login.lowercased().contains(filter.lowercased())} //buradaki filter'in olayi ile ilgili sean allen'in videosu var. Bu rabbit hole'a girmeyelim simdi.
+    updateData(followers: filteredFollowers)
+        
+        
+    }
+    
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        isSearching = false //Bu arada isSearching.toggle() diye bir sey var direkt boolena'i flip ediyormus galiba...
+        updateData(followers: followers)
+    }
+    
+    
+}
+
+
