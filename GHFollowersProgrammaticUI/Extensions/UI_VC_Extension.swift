@@ -6,6 +6,8 @@
 //
 
 import UIKit
+import SafariServices
+
 //Not: Import uikit ile ayni zamanda foundation'da import edilir.
 
 
@@ -46,8 +48,15 @@ extension UIViewController{
         
         
         
+        
     }
      
+    func PresentsafariView(with url: URL){
+        let safariVC = SFSafariViewController(url: url)
+        safariVC.preferredControlTintColor = .systemGreen
+        present(safariVC, animated: true)
+    }
+    
     
     func showLoadingView(){
         containerView = UIView(frame: view.bounds)

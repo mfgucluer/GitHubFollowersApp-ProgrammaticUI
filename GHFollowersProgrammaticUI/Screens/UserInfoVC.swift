@@ -7,6 +7,15 @@
 
 import UIKit
 
+protocol UserInfoVCDelegate: class {
+    func didTapGitHubProfile(for user: User)
+    func didTapGetFollowers(for user: User)
+}
+
+
+
+
+
 class UserInfoVC: UIViewController {
     
     
@@ -14,11 +23,13 @@ class UserInfoVC: UIViewController {
     let itemView1 = UIView()
     let itemView2 = UIView()
     var itemViews: [UIView] = []
-    
+    var textDateLabel = GFBodyLabel(textAligment: .center)
     
     var username: String!
+    weak var delegate: FollowerListVCDelegate!
     
-    override func viewDidLoad() 
+    
+    override func viewDidLoad()
     {
         super.viewDidLoad()
         configureViewController()
@@ -43,13 +54,8 @@ class UserInfoVC: UIViewController {
             switch result {
             case .success(let user):
                 
-                DispatchQueue.main.async{
-                    self.add(childVC: GFUserInfoHeaderVC(user: user), to: self.headerView)
-                    self.add(childVC: GFRepoItemVC(user: user), to: self.itemView1)
-                    self.add(childVC: GFFollowerItemVC(user: user), to: self.itemView2)
-                    
-
-                }
+                DispatchQueue.main.async{self.configureUIElements(with: user)}
+                
             case .failure(let error):
                 self.presenatGFAlertOnMainThread(title: "Something went wrong", message: error.rawValue, buttonTitle: "Ok")
             }
@@ -57,11 +63,29 @@ class UserInfoVC: UIViewController {
     }
     
     
+    func configureUIElements(with user: User){
+        
+        let repoItemVC = GFRepoItemVC(user: user)
+        repoItemVC.delegate = self
+        
+        let followerItemVC = GFFollowerItemVC(user: user)
+        followerItemVC.delegate = self
+        
+        
+        self.add(childVC: GFUserInfoHeaderVC(user: user), to: self.headerView)
+        self.add(childVC: repoItemVC, to: self.itemView1)
+        self.add(childVC: followerItemVC, to: self.itemView2)
+        self.textDateLabel.text = "GitHub since \(user.createdAt.prefix(4))" //Sean allen abim bunu extension kisminda date formatter falan yapiyor sirf june january gibi ayi da gostermek icin. Gerek gormedim ben ugrastiriyor. Bu sekilde bir seye ihtiyacin olursa bakarsin.
+        
+        
+    }
+    
+    
     func layoutUI(){
         let padding: CGFloat = 20
         let itemHeight: CGFloat = 140
         
-        itemViews = [headerView,itemView1,itemView2]
+        itemViews = [headerView,itemView1,itemView2,textDateLabel]
 
         for itemView in itemViews {
             view.addSubview(itemView)
@@ -82,7 +106,10 @@ class UserInfoVC: UIViewController {
             
             
             itemView2.topAnchor.constraint(equalTo: itemView1.bottomAnchor, constant: padding),
-            itemView2.heightAnchor.constraint(equalToConstant: itemHeight)
+            itemView2.heightAnchor.constraint(equalToConstant: itemHeight),
+            
+            textDateLabel.topAnchor.constraint(equalTo: itemView2.bottomAnchor, constant: padding),
+            textDateLabel.heightAnchor.constraint(equalToConstant: 20)
             
         ])
     }
@@ -94,9 +121,44 @@ class UserInfoVC: UIViewController {
         childVC.view.frame = containerView.bounds
         childVC.didMove(toParent: self)
     }
+
+    
+    
+    
     
     @objc func dismissVC(){
         dismiss(animated: true)
     }
+    
+}
+
+
+extension UserInfoVC: UserInfoVCDelegate {
+    func didTapGitHubProfile(for user: User) {
+        guard let url = URL(string: user.htmlUrl) else {
+            presenatGFAlertOnMainThread(title: "Invalid URL!", message: "Cannot acces the GitHub Profile.", buttonTitle:   "OK!")
+            return
+        }
+        /*
+        let safariVC = SFSafariViewController(url: url)
+        safariVC.preferredControlTintColor = .systemGreen
+        present(safariVC, animated: true)
+
+         viewcontroller extensiona goturduk bunu....
+         */
+        
+        PresentsafariView(with: url)
+    }
+    
+    func didTapGetFollowers(for user: User) {
+        guard user.followers != 0 else {presenatGFAlertOnMainThread(title: "No Followers", message: "This user has no followers.What a shame", buttonTitle: "So sad")
+            return
+        }
+        delegate.didRequestFollowers(for: user.login)
+        dismissVC()
+    }
+    
+    
+   
     
 }

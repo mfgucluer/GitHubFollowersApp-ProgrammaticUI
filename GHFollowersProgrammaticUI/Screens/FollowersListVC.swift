@@ -8,6 +8,13 @@
 
 import UIKit
 
+protocol FollowerListVCDelegate: class{
+    func didRequestFollowers(for username: String)
+    
+}
+
+
+
 class FollowersListVC: UIViewController {
     
     
@@ -233,6 +240,8 @@ extension FollowersListVC: UICollectionViewDelegate {
         
         
         let destinationVC = UserInfoVC()
+        destinationVC.delegate = self
+        
         
         destinationVC.username = followerUser.login
         
@@ -275,4 +284,18 @@ extension FollowersListVC: UISearchResultsUpdating,UISearchBarDelegate {
     
 }
 
-
+extension FollowersListVC: FollowerListVCDelegate {
+    func didRequestFollowers(for username: String) {
+        // get followers for that user
+        
+        self.username = username
+        title = username
+        page = 1
+        followers.removeAll()
+        filteredFollowers.removeAll()
+        collectionView.setContentOffset(.zero, animated: true) //scroll up to the top real quick
+        getFollowers(username: username, page: page)
+    }
+    
+    
+}
