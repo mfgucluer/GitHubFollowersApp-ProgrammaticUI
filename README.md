@@ -1,8 +1,11 @@
 # GitHubFollowersApp-ProgrammaticUI-MVC
 
-
 ## **Description**
 With this application, you can list your Github followers and get detailed information about your followers. Examples of this information include username, biography, number of public repositories, number of public gists, number of followers and number of following. You can also add the people you want to your favorites in the application.
+
+
+I wrote down everything I learned while making this app in a document. You can also reach it here:
+https://drive.google.com/drive/folders/1H24CZs_WsDRcOqxVq-MZ5cck5dQH2YHh?usp=sharing
 
 ## **Features**
 
