@@ -1,7 +1,7 @@
 # GitHubFollowersApp-ProgrammaticUI-MVC
 
 
-## Screenshots
+## Screenshots(Please wait 5 seconds for the images to download.)
 <div class="row">
   <img src="https://github.com/mfgucluer/GitHubFollowersApp-ProgrammaticUI/assets/87612705/b8b1aeeb-9738-4c9b-8b41-1c43eb794127" width="200" height="400" class="col-md-6">
   <img src="https://github.com/mfgucluer/GitHubFollowersApp-ProgrammaticUI/assets/87612705/0b9efe76-e4c9-4f08-b6f0-cd611d49b02c" width="200" height="400" class="col-md-6">
