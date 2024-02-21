@@ -8,7 +8,7 @@
 
 import UIKit
 
-protocol FollowerListVCDelegate: class{
+protocol FollowerListVCDelegate: AnyObject{
     func didRequestFollowers(for username: String)
     
 }
@@ -20,6 +20,7 @@ class FollowersListVC: UIViewController {
     
     
     enum Section{case main}
+    
     
     
     var username: String!
@@ -63,6 +64,11 @@ class FollowersListVC: UIViewController {
         navigationController?.navigationBar.prefersLargeTitles = true // Buyuk olmasini istiyoruz.
         
         //configureViewController fonksiyonu içinde, navigationController özellikleri ayarlanarak görünümün arka plan rengi belirlenmiş.
+        
+        
+        let addButton = UIBarButtonItem(barButtonSystemItem: UIBarButtonItem.SystemItem.add, target: self, action: #selector(addButtonTapped))
+        navigationItem.rightBarButtonItem = addButton
+        
         
     }
     
@@ -249,6 +255,43 @@ extension FollowersListVC: UICollectionViewDelegate {
         present(navigationController, animated: true)
         
         
+        
+    }
+    
+    @objc func addButtonTapped(){
+        showLoadingView()
+        
+        
+        NetworkManager.sharedd.getUserInfo(for: username) { [weak self] result in
+            guard let self = self else {return}
+            self.dismissLoadingView()
+            
+            
+            switch result {
+            case .success(let user):
+                let favorite = Follower(login: user.login, avatarUrl: user.avatarUrl)
+                
+                PersistenceManager.updateWith(favorite: favorite, actionType: .add) {[weak self] error in
+                    guard let self = self else {return}
+                    
+                    guard let error = error else {
+                        self.presenatGFAlertOnMainThread(title: "Succes", message: "You have succesfly favorited this user!", buttonTitle: "OK")
+                        return
+                    }
+                    
+                    self.presenatGFAlertOnMainThread(title: "Something went wrong", message: error.rawValue, buttonTitle: "Ok")
+                    
+                    
+                    
+                    
+                }
+                
+            case .failure(let error):
+                self.presenatGFAlertOnMainThread(title: "Something went wrong", message: error.rawValue, buttonTitle: "Ok")
+            }
+            
+            
+        }
         
     }
    
